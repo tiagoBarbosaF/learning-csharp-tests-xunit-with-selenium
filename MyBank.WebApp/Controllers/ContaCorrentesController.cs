@@ -40,6 +40,9 @@ namespace MyBank.WebApp.Controllers
         // GET: ContaCorrentes
         public ActionResult Index()
         {
+            if (!User.Identity!.IsAuthenticated)
+                return Unauthorized();
+
             return View(contaCorrenteServicoApp.ObterTodos());
         }
 

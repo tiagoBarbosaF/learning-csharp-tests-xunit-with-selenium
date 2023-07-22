@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyBank.Dominio.Entidades;
@@ -157,14 +158,14 @@ namespace MyBank.WebApp.Controllers
                 if (_usuario!=null)
                 {
                     var token = TokenService.GenerateToken(_usuario);
-                    if (_usuario.Senha == senha)
-                    {
-                        HttpContext.Request.Headers.Remove("Authorization");
-                        HttpContext.Request.Headers.Add("Authorization","Bearer " + token);
-                        HttpContext.Session.SetString("JWToken", token);
-                        HttpContext.Session.SetString("user", _usuario.UserName);                        
-                        return RedirectToAction("Index","Home");
-                    }
+                    if (_usuario.Senha != senha)
+                        throw new Exception("Invalid Password.");
+
+                    HttpContext.Request.Headers.Remove("Authorization");
+                    HttpContext.Request.Headers.Add("Authorization","Bearer " + token);
+                    HttpContext.Session.SetString("JWToken", token);
+                    HttpContext.Session.SetString("user", _usuario.UserName);                        
+                    return RedirectToAction("Index","Home");
                 }
             }
             return View(usuario);

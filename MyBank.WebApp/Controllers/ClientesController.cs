@@ -35,6 +35,9 @@ namespace MyBank.WebApp.Controllers
         [Authorize]
         public IActionResult Index()
         {
+            if (!User.Identity!.IsAuthenticated)
+                return Unauthorized();
+            
             return View(clienteServicoApp.ObterTodos());
         }
 
