@@ -1,10 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+using MyBank.WebApp.Tests.PageObjects;
+using MyBank.WebApp.Tests.Utils;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using Xunit;
@@ -12,28 +13,30 @@ using Xunit.Abstractions;
 
 namespace MyBank.WebApp.Tests
 {
-    public class NavigatingHomePage
+    public class NavigatingHomePage : IClassFixture<Manager>
     {
-        private IWebDriver _driver;
-
+        private static IWebDriver _driver;
         private HttpClient _httpClient = new();
-
         private ITestOutputHelper _outputHelper;
+        private string _urlHome = "https://localhost:5001";
+        private string _email = "andre@email.com";
+        private string _password = "senha01";
+        private LoginPO _loginPo;
 
-        public NavigatingHomePage(ITestOutputHelper outputHelper)
+        public NavigatingHomePage(ITestOutputHelper outputHelper, Manager manager)
         {
             _outputHelper = outputHelper;
-            var firefoxOptions = new FirefoxOptions();
-            firefoxOptions.AddArgument("--headless");
 
-            _driver = new FirefoxDriver(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location + $"\\Debug\\net5.0"), firefoxOptions);
+            _driver = manager.Driver;
+            
+            _loginPo = new LoginPO(_driver);
         }
+        
 
         [Fact(DisplayName = "Load Home Page and check page title")]
         public void LoadHomePageAndCheckPageTitle()
         {
-            _driver.Navigate().GoToUrl("https://localhost:5001");
+            _loginPo.Navigate(_urlHome);
 
             Assert.Contains("WebApp", _driver.Title);
         }
@@ -41,7 +44,7 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "Load Home Page and check if exist link login and home")]
         public void LoadHomePageAndCheckIfExistLinkLoginAndHome()
         {
-            _driver.Navigate().GoToUrl("https://localhost:5001");
+            _loginPo.Navigate(_urlHome);
 
             Assert.Contains("Login", _driver.PageSource);
 
@@ -51,15 +54,13 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "Login WebApp MyBank")]
         public void LoginWebAppMyBank()
         {
-            LoginWebApp();
-
-            // _driver.FindElement(By.CssSelector(".btn")).Click();
+            _loginPo.ToFillInLoginFields(_urlHome, _email, _password);
         }
 
         [Fact(DisplayName = "Valid login link in home page")]
         public void ValidLoginLinkHomePage()
         {
-            _driver.Navigate().GoToUrl("https://localhost:5001");
+            _loginPo.Navigate(_urlHome);
 
             var loginLink = _driver.FindElement(By.LinkText("Login"));
 
@@ -71,7 +72,7 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "After login check if exists the menu options Agencia")]
         public void AfterLoginCheckMenuAgencia()
         {
-            LoginWebApp();
+            _loginPo.ToFillInLoginFields(_urlHome, _email, _password);
 
             Assert.Contains("Agência", _driver.PageSource);
         }
@@ -79,7 +80,7 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "Check login fields required")]
         public void CheckLoginFieldsRequired()
         {
-            _driver.Navigate().GoToUrl("https://localhost:5001");
+            _loginPo.Navigate(_urlHome);
 
             _driver.FindElement(By.LinkText("Login")).Click();
 
@@ -93,9 +94,9 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "Check login password wrong")]
         public void CheckLoginPasswordWrong()
         {
-            LoginWebApp();
+            _loginPo.ToFillInLoginFields($"{_urlHome}/UsuarioApps/Login", _email, "111");
 
-            Assert.Contains("Exception: Invalid Password", _driver.PageSource);
+            Assert.Contains("Exception: Invalid Password.", _driver.PageSource);
         }
 
         [Fact(DisplayName = "Check url access menu Agência")]
@@ -125,9 +126,9 @@ namespace MyBank.WebApp.Tests
         [Fact(DisplayName = "Check record a client")]
         public void CheckRecordClient()
         {
-            LoginWebApp();
+            _loginPo.ToFillInLoginFields(_urlHome, _email, _password);
 
-            _driver.Navigate().GoToUrl("https://localhost:5001/Clientes/Index");
+            _driver.Navigate().GoToUrl($"{_urlHome}/Clientes/Index");
 
             _driver.FindElement(By.LinkText("Adicionar Cliente")).Click();
 
@@ -156,8 +157,8 @@ namespace MyBank.WebApp.Tests
         public void CheckListOfContas()
         {
             var conta = "4159";
-            
-            LoginWebApp();
+
+            _loginPo.ToFillInLoginFields(_urlHome, _email, _password);
 
             _driver.FindElement(By.Id("contacorrente")).Click();
 
@@ -165,33 +166,10 @@ namespace MyBank.WebApp.Tests
 
             // foreach (var element in elements) _outputHelper.WriteLine(element.Text);
             var element = (from webElement in elements
-                    where webElement.Text.Contains(conta)
-                    select webElement).First();
-            
+                where webElement.Text.Contains(conta)
+                select webElement).First();
+
             Assert.Equal(conta, element.Text);
-        }
-
-        private void LoginWebApp()
-        {
-            _driver.Navigate().GoToUrl("https://localhost:5001");
-
-            _driver.FindElement(By.LinkText("Login")).Click();
-
-            _driver.FindElement(By.Id("Email")).Click();
-
-            _driver.FindElement(By.Id("Email")).SendKeys("andre@email.com");
-
-            _driver.FindElement(By.Id("Senha")).Click();
-
-            _driver.FindElement(By.Id("Senha")).SendKeys("senha01");
-
-            _driver.FindElement(By.Id("btn-logar")).Click();
-        }
-
-        public void Dispose()
-        {
-            _driver.Quit();
-            _driver.Dispose();
         }
     }
 }
