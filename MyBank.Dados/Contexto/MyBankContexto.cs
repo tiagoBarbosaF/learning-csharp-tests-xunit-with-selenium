@@ -13,8 +13,11 @@ namespace MyBank.Dados.Contexto
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            string stringconexao = "server=localhost;" +
-                                   "DataBase=mybankbd_webapp;Uid=root;Pwd=root";
+            string stringconexao = "Server=mybank.mysql.database.azure.com;" +
+                                   "UserID = tiago;" +
+                                   "Password=<@MyBank@>;" +
+                                   "Database=mybank;" +
+                                   "SslMode=None;";
             optionsBuilder.UseMySql(stringconexao, 
                                     ServerVersion.AutoDetect(stringconexao));
         }
